@@ -1,0 +1,41 @@
+# Ignorar pastas de build
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Ignorar arquivos do Visual Studio
+**/.vs/
+**/.vscode/
+**/*.user
+**/*.suo
+**/*.sln.docstates
+
+# Ignorar pastas de teste
+tests/
+**/Tests/
+**/TestResults/
+
+# Ignorar arquivos de git
+.git/
+.gitignore
+.gitattributes
+
+# Ignorar arquivos de ambiente
+.env
+*.env
+*.env.local
+
+# Ignorar documentos
+*.md
+README.md
+LICENSE
+
+# Ignorar logs
+*.log
+**/logs/
+
+# Ignorar arquivos temporários
+*.tmp
+*.temp
+*.cache
