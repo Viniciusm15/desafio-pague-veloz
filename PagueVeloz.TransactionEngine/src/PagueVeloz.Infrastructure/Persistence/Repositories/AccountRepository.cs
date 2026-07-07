@@ -16,7 +16,9 @@ public class AccountRepository : IAccountRepository
 
     public async Task<Account?> GetByIdAsync(Guid accountId)
     {
-        return await _context.Accounts.FirstOrDefaultAsync(a => a.Id == accountId);
+        return await _context.Accounts
+            .Include(a => a.Operations)
+            .FirstOrDefaultAsync(a => a.Id == accountId);
     }
 
     public async Task AddAsync(Account account)
@@ -27,7 +29,13 @@ public class AccountRepository : IAccountRepository
 
     public async Task UpdateAsync(Account account)
     {
-        _context.Accounts.Update(account);
+        _context.Entry(account).State = EntityState.Modified;
+
+        foreach (var operation in account.Operations)
+        {
+            _context.Entry(operation).State = EntityState.Unchanged;
+        }
+
         await _context.SaveChangesAsync();
     }
 }
