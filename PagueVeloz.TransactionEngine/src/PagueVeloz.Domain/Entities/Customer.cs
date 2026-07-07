@@ -16,10 +16,10 @@ public class Customer
     public static Customer Create(string name, string document)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Nome do cliente é obrigatório.");
+            throw new ArgumentException("Customer name is required.");
 
         if (string.IsNullOrWhiteSpace(document))
-            throw new ArgumentException("Documento do cliente é obrigatório.");
+            throw new ArgumentException("Customer document is required.");
 
         return new Customer(name, document);
     }
