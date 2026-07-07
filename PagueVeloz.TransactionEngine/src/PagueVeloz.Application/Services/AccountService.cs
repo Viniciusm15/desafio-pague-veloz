@@ -31,4 +31,26 @@ public class AccountService : IAccountService
     {
         return _accountRepository.GetByIdAsync(accountId);
     }
+
+    public async Task<Account> CreditAsync(Guid accountId, decimal amount)
+    {
+        var account = await _accountRepository.GetByIdAsync(accountId)
+            ?? throw new NotFoundException(nameof(Account), accountId);
+
+        account.Credit(amount);
+        await _accountRepository.UpdateAsync(account);
+
+        return account;
+    }
+
+    public async Task<Account> DebitAsync(Guid accountId, decimal amount)
+    {
+        var account = await _accountRepository.GetByIdAsync(accountId)
+            ?? throw new NotFoundException(nameof(Account), accountId);
+
+        account.Debit(amount);
+        await _accountRepository.UpdateAsync(account);
+
+        return account;
+    }
 }
