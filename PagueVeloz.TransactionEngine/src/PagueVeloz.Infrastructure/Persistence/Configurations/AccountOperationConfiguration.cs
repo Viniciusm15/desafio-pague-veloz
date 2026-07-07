@@ -10,6 +10,10 @@ public class AccountOperationConfiguration : IEntityTypeConfiguration<AccountOpe
     {
         builder.ToTable("AccountOperations");
         builder.HasKey(o => o.Id);
+        builder.Property(a => a.Id).ValueGeneratedNever();
+
+        builder.Property(o => o.Id)
+            .ValueGeneratedNever();
 
         builder.Property(o => o.Type)
             .HasConversion<string>()
@@ -20,10 +24,5 @@ public class AccountOperationConfiguration : IEntityTypeConfiguration<AccountOpe
 
         builder.Property(o => o.OccurredAt)
             .IsRequired();
-
-        builder.HasOne<Account>()
-            .WithMany(a => a.Operations)
-            .HasForeignKey(o => o.AccountId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

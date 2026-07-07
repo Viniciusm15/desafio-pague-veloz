@@ -9,11 +9,16 @@ public class AccountService : IAccountService
 {
     private readonly IAccountRepository _accountRepository;
     private readonly ICustomerRepository _customerRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AccountService(IAccountRepository accountRepository, ICustomerRepository customerRepository)
+    public AccountService(
+        IAccountRepository accountRepository,
+        ICustomerRepository customerRepository,
+        IUnitOfWork unitOfWork)
     {
         _accountRepository = accountRepository;
         _customerRepository = customerRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Account> OpenAccountAsync(Guid customerId)
@@ -38,7 +43,7 @@ public class AccountService : IAccountService
             ?? throw new NotFoundException(nameof(Account), accountId);
 
         account.Credit(amount);
-        await _accountRepository.UpdateAsync(account);
+        await _unitOfWork.SaveChangesAsync();
 
         return account;
     }
@@ -49,7 +54,7 @@ public class AccountService : IAccountService
             ?? throw new NotFoundException(nameof(Account), accountId);
 
         account.Debit(amount);
-        await _accountRepository.UpdateAsync(account);
+        await _unitOfWork.SaveChangesAsync();
 
         return account;
     }
@@ -60,7 +65,7 @@ public class AccountService : IAccountService
             ?? throw new NotFoundException(nameof(Account), accountId);
 
         account.Reserve(amount);
-        await _accountRepository.UpdateAsync(account);
+        await _unitOfWork.SaveChangesAsync();
 
         return account;
     }
@@ -71,7 +76,7 @@ public class AccountService : IAccountService
             ?? throw new NotFoundException(nameof(Account), accountId);
 
         account.Capture(reserveOperationId);
-        await _accountRepository.UpdateAsync(account);
+        await _unitOfWork.SaveChangesAsync();
 
         return account;
     }

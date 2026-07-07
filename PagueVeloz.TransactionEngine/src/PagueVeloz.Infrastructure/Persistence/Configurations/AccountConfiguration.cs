@@ -10,6 +10,7 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
     {
         builder.ToTable("Accounts");
         builder.HasKey(a => a.Id);
+        builder.Property(a => a.Id).ValueGeneratedNever();
 
         builder.Property(a => a.CustomerId)
             .IsRequired();

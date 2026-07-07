@@ -10,6 +10,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
     {
         builder.ToTable("Customers");
         builder.HasKey(c => c.Id);
+        builder.Property(a => a.Id).ValueGeneratedNever();
 
         builder.Property(c => c.Name)
             .HasMaxLength(200)

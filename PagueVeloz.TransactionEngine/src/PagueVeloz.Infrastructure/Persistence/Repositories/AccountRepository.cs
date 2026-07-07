@@ -26,16 +26,4 @@ public class AccountRepository : IAccountRepository
         await _context.Accounts.AddAsync(account);
         await _context.SaveChangesAsync();
     }
-
-    public async Task UpdateAsync(Account account)
-    {
-        _context.Entry(account).State = EntityState.Modified;
-
-        foreach (var operation in account.Operations)
-        {
-            _context.Entry(operation).State = EntityState.Unchanged;
-        }
-
-        await _context.SaveChangesAsync();
-    }
 }

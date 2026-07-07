@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PagueVeloz.Domain.Interfaces;
+using PagueVeloz.Infrastructure.Persistence;
 using PagueVeloz.Infrastructure.Persistence.Context;
 using PagueVeloz.Infrastructure.Persistence.Repositories;
 
@@ -15,6 +16,7 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
 
