@@ -17,4 +17,23 @@ public class Account
     {
         return new Account(customerId);
     }
+
+    public void Credit(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Credit amount must be greater than zero.", nameof(amount));
+
+        AvailableBalance += amount;
+    }
+
+    public void Debit(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Debit amount must be greater than zero.", nameof(amount));
+
+        if (amount > AvailableBalance)
+            throw new InvalidOperationException($"Insufficient balance. Available: {AvailableBalance}, Requested: {amount}");
+
+        AvailableBalance -= amount;
+    }
 }
