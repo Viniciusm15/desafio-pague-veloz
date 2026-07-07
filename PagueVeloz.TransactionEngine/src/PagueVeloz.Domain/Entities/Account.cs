@@ -75,4 +75,39 @@ public class Account
         ReservedBalance -= amount;
         _operations.Add(new AccountOperation(Id, OperationType.Capture, amount));
     }
+
+    public void Reversal(Guid originalOperationId)
+    {
+        var originalOperation = _operations.FirstOrDefault(o => o.Id == originalOperationId);
+
+        if (originalOperation is null)
+            throw new InvalidOperationException($"Operation {originalOperationId} not found.");
+
+        var amount = originalOperation.Amount;
+
+        switch (originalOperation.Type)
+        {
+            case OperationType.Credit:
+                AvailableBalance -= amount;
+                break;
+
+            case OperationType.Debit:
+                AvailableBalance += amount;
+                break;
+
+            case OperationType.Reserve:
+                ReservedBalance -= amount;
+                AvailableBalance += amount;
+                break;
+
+            case OperationType.Capture:
+                AvailableBalance += amount;
+                break;
+
+            default:
+                throw new InvalidOperationException($"Operations of type '{originalOperation.Type}' cannot be reversed.");
+        }
+
+        _operations.Add(new AccountOperation(Id, OperationType.Reversal, amount));
+    }
 }

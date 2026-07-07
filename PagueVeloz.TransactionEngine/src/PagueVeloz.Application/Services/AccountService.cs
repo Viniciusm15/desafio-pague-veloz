@@ -80,4 +80,15 @@ public class AccountService : IAccountService
 
         return account;
     }
+
+    public async Task<Account> ReversalAsync(Guid accountId, Guid originalOperationId)
+    {
+        var account = await _accountRepository.GetByIdAsync(accountId)
+            ?? throw new NotFoundException(nameof(Account), accountId);
+
+        account.Reversal(originalOperationId);
+        await _unitOfWork.SaveChangesAsync();
+
+        return account;
+    }
 }

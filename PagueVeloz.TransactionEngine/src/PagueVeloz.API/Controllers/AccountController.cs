@@ -156,4 +156,29 @@ public class AccountController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    [HttpPost("{id}/reversal")]
+    public async Task<IActionResult> Reversal(Guid id, [FromBody] ReversalAccountRequest request)
+    {
+        try
+        {
+            var account = await _accountService.ReversalAsync(id, request.OriginalOperationId);
+
+            return Ok(new
+            {
+                account.Id,
+                account.AvailableBalance,
+                account.ReservedBalance,
+                Message = "Reversal completed successfully."
+            });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
