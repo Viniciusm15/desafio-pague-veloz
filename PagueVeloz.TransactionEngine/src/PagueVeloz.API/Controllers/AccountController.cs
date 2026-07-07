@@ -44,4 +44,54 @@ public class AccountController : ControllerBase
 
         return Ok(account);
     }
+
+    [HttpPost("{id}/credit")]
+    public async Task<IActionResult> Credit(Guid id, [FromBody] CreditAccountRequest request)
+    {
+        try
+        {
+            var account = await _accountService.CreditAsync(id, request.Amount);
+            return Ok(new
+            {
+                account.Id,
+                account.AvailableBalance,
+                Message = $"Credit of {request.Amount:C} completed successfully."
+            });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("{id}/debit")]
+    public async Task<IActionResult> Debit(Guid id, [FromBody] DebitAccountRequest request)
+    {
+        try
+        {
+            var account = await _accountService.DebitAsync(id, request.Amount);
+            return Ok(new
+            {
+                account.Id,
+                account.AvailableBalance,
+                Message = $"Debit of {request.Amount:C} completed successfully."
+            });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
