@@ -18,8 +18,20 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
+        builder.Property(a => a.ReservedBalance)
+            .HasColumnType("decimal(18,2)")
+            .HasDefaultValue(0);
+
         builder.HasOne<Customer>()
             .WithMany()
             .HasForeignKey(a => a.CustomerId);
+
+        builder.HasMany(a => a.Operations)
+            .WithOne()
+            .HasForeignKey(o => o.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(a => a.Operations)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
