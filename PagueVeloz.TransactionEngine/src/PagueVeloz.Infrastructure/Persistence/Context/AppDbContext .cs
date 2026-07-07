@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<AccountOperation> AccountOperations => Set<AccountOperation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
