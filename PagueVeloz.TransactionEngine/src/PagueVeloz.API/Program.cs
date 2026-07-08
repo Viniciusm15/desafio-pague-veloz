@@ -22,15 +22,6 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    Status = "Healthy",
-    Timestamp = DateTime.UtcNow,
-    Environment = app.Environment.EnvironmentName
-}));
-
-app.MapGet("/", () => "PagueVeloz API is running! Acesse /swagger");
-
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
