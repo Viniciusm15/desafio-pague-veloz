@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-using PagueVeloz.Domain.Enums;
+﻿using PagueVeloz.Domain.Enums;
+using PagueVeloz.Domain.Interfaces;
 
 namespace PagueVeloz.Domain.Entities;
 
@@ -37,17 +37,10 @@ public class Account
     public void Deactivate() => Status = AccountStatus.Inactive;
     public void Block() => Status = AccountStatus.Blocked;
 
-    private void EnsureActive()
-    {
-        if (Status != AccountStatus.Active)
-            throw new InvalidOperationException($"Account {Id} is {Status}. Only active accounts can perform operations.");
-    }
-
     public AccountOperation Credit(decimal amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
-        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
-        if (existingOperation is not null)
-            return existingOperation;
+        if (TryGetExistingOperation(referenceId, out var existing))
+            return existing!;
 
         EnsureActive();
 
@@ -64,9 +57,8 @@ public class Account
 
     public AccountOperation Debit(decimal amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
-        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
-        if (existingOperation is not null)
-            return existingOperation;
+        if (TryGetExistingOperation(referenceId, out var existing))
+            return existing!;
 
         EnsureActive();
 
@@ -87,9 +79,8 @@ public class Account
 
     public AccountOperation Reserve(decimal amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
-        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
-        if (existingOperation is not null)
-            return existingOperation;
+        if (TryGetExistingOperation(referenceId, out var existing))
+            return existing!;
 
         EnsureActive();
 
@@ -110,9 +101,8 @@ public class Account
 
     public AccountOperation Capture(Guid reserveOperationId, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
-        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
-        if (existingOperation is not null)
-            return existingOperation;
+        if (TryGetExistingOperation(referenceId, out var existing))
+            return existing!;
 
         EnsureActive();
 
@@ -134,9 +124,8 @@ public class Account
 
     public AccountOperation Reversal(Guid originalOperationId, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
-        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
-        if (existingOperation is not null)
-            return existingOperation;
+        if (TryGetExistingOperation(referenceId, out var existing))
+            return existing!;
 
         EnsureActive();
 
@@ -169,4 +158,20 @@ public class Account
 
         return operation;
     }
+
+    #region Private Methods
+
+    private void EnsureActive()
+    {
+        if (Status != AccountStatus.Active)
+            throw new InvalidOperationException($"Account {Id} is {Status}. Only active accounts can perform operations.");
+    }
+
+    private bool TryGetExistingOperation(string referenceId, out AccountOperation? operation)
+    {
+        operation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
+        return operation is not null;
+    }
+
+    #endregion
 }
