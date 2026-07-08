@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Text.Json;
 
 namespace PagueVeloz.API.HealthChecks;
 
@@ -22,12 +21,5 @@ public static class HealthCheckResponseWriter
                 error = e.Value.Exception?.Message
             })
         });
-    }
-
-    public static async Task WriteResponse(HttpContext context, HealthReport report)
-    {
-        context.Response.ContentType = "application/json";
-        var response = BuildResponse(context, report);
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }
