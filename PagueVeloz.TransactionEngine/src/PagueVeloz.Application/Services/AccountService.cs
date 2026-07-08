@@ -39,8 +39,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> BlockAsync(Guid accountId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Block();
         await _unitOfWork.SaveChangesAsync();
@@ -50,8 +49,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> ReactivateAsync(Guid accountId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Activate();
         await _unitOfWork.SaveChangesAsync();
@@ -61,8 +59,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> DeactivateAsync(Guid accountId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Deactivate();
         await _unitOfWork.SaveChangesAsync();
@@ -72,8 +69,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> CreditAsync(Guid accountId, decimal amount, string referenceId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Credit(amount, referenceId);
         await _unitOfWork.SaveChangesAsync();
@@ -83,8 +79,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> DebitAsync(Guid accountId, decimal amount, string referenceId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Debit(amount, referenceId);
         await _unitOfWork.SaveChangesAsync();
@@ -94,8 +89,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> ReserveAsync(Guid accountId, decimal amount, string referenceId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Reserve(amount, referenceId);
         await _unitOfWork.SaveChangesAsync();
@@ -105,8 +99,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> CaptureAsync(Guid accountId, Guid reserveOperationId, string referenceId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Capture(reserveOperationId, referenceId);
         await _unitOfWork.SaveChangesAsync();
@@ -116,8 +109,7 @@ public class AccountService : IAccountService
 
     public async Task<Account> ReversalAsync(Guid accountId, Guid originalOperationId, string referenceId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId)
-            ?? throw new NotFoundException(nameof(Account), accountId);
+        var account = await GetAccountByIdAsync(accountId);
 
         account.Reversal(originalOperationId, referenceId);
         await _unitOfWork.SaveChangesAsync();
@@ -131,11 +123,8 @@ public class AccountService : IAccountService
         if (sourceAccountId == destinationAccountId)
             throw new ArgumentException("Source and destination accounts must be different.");
 
-        var source = await _accountRepository.GetByIdAsync(sourceAccountId)
-            ?? throw new NotFoundException(nameof(Account), sourceAccountId);
-
-        var destination = await _accountRepository.GetByIdAsync(destinationAccountId)
-            ?? throw new NotFoundException(nameof(Account), destinationAccountId);
+        var source = await GetAccountByIdAsync(sourceAccountId);
+        var destination = await GetAccountByIdAsync(destinationAccountId);
 
         source.Debit(amount, referenceId);
         destination.Credit(amount, referenceId);
@@ -144,4 +133,14 @@ public class AccountService : IAccountService
 
         return (source, destination);
     }
+
+    #region Private Methods
+
+    private async Task<Account> GetAccountByIdAsync(Guid accountId)
+    {
+        var account = await _accountRepository.GetByIdAsync(accountId);
+        return account ?? throw new NotFoundException(nameof(Account), accountId);
+    }
+
+    #endregion
 }
