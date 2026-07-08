@@ -30,65 +30,95 @@ public class Account
         return new Account(customerId, creditLimit);
     }
 
-    public void Credit(decimal amount)
+    public AccountOperation Credit(decimal amount, string referenceId)
     {
+        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
+        if (existingOperation is not null)
+            return existingOperation;
+
         if (amount <= 0)
-            throw new ArgumentException("Credit amount must be greater than zero.", nameof(amount));
+            throw new ArgumentException("Credit amount must be greater than zero.");
 
         AvailableBalance += amount;
-        _operations.Add(new AccountOperation(Id, OperationType.Credit, amount));
+
+        var operation = new AccountOperation(Id, OperationType.Credit, amount, referenceId);
+        _operations.Add(operation);
+
+        return operation;
     }
 
-    public void Debit(decimal amount)
+    public AccountOperation Debit(decimal amount, string referenceId)
     {
+        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
+        if (existingOperation is not null)
+            return existingOperation;
+
         if (amount <= 0)
             throw new ArgumentException("Debit amount must be greater than zero.");
 
         var availableWithCreditLimit = AvailableBalance + CreditLimit;
-
         if (amount > availableWithCreditLimit)
             throw new InvalidOperationException("Insufficient funds to complete the debit.");
 
         AvailableBalance -= amount;
-        _operations.Add(new AccountOperation(Id, OperationType.Debit, amount));
+
+        var operation = new AccountOperation(Id, OperationType.Debit, amount, referenceId);
+        _operations.Add(operation);
+
+        return operation;
     }
 
-    public void Reserve(decimal amount)
+    public AccountOperation Reserve(decimal amount, string referenceId)
     {
+        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
+        if (existingOperation is not null)
+            return existingOperation;
+
         if (amount <= 0)
-            throw new ArgumentException("Reserve amount must be greater than zero.", nameof(amount));
+            throw new ArgumentException("Reserve amount must be greater than zero.");
 
         if (amount > AvailableBalance)
-            throw new InvalidOperationException($"Insufficient available balance. Available: {AvailableBalance}, Requested: {amount}");
+            throw new InvalidOperationException("Insufficient available balance for reservation.");
 
         AvailableBalance -= amount;
         ReservedBalance += amount;
-        _operations.Add(new AccountOperation(Id, OperationType.Reserve, amount));
+
+        var operation = new AccountOperation(Id, OperationType.Reserve, amount, referenceId);
+        _operations.Add(operation);
+
+        return operation;
     }
 
-    public void Capture(Guid reserveOperationId)
+    public AccountOperation Capture(Guid reserveOperationId, string referenceId)
     {
-        var reserveOperation = _operations.FirstOrDefault(o =>
-            o.Id == reserveOperationId && o.Type == OperationType.Reserve);
+        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
+        if (existingOperation is not null)
+            return existingOperation;
 
-        if (reserveOperation is null)
-            throw new InvalidOperationException($"Reserve operation {reserveOperationId} not found.");
+        var reservation = _operations.FirstOrDefault(o => o.Id == reserveOperationId)
+            ?? throw new InvalidOperationException($"Reservation {reserveOperationId} not found.");
 
-        var amount = reserveOperation.Amount;
+        var amount = reservation.Amount;
 
         if (amount > ReservedBalance)
-            throw new InvalidOperationException($"Insufficient reserved balance. Reserved: {ReservedBalance}, Requested: {amount}");
+            throw new InvalidOperationException("Insufficient reserved balance for capture.");
 
         ReservedBalance -= amount;
-        _operations.Add(new AccountOperation(Id, OperationType.Capture, amount));
+
+        var operation = new AccountOperation(Id, OperationType.Capture, amount, referenceId);
+        _operations.Add(operation);
+
+        return operation;
     }
 
-    public void Reversal(Guid originalOperationId)
+    public AccountOperation Reversal(Guid originalOperationId, string referenceId)
     {
-        var originalOperation = _operations.FirstOrDefault(o => o.Id == originalOperationId);
+        var existingOperation = _operations.FirstOrDefault(o => o.ReferenceId == referenceId);
+        if (existingOperation is not null)
+            return existingOperation;
 
-        if (originalOperation is null)
-            throw new InvalidOperationException($"Operation {originalOperationId} not found.");
+        var originalOperation = _operations.FirstOrDefault(o => o.Id == originalOperationId)
+            ?? throw new InvalidOperationException($"Operation {originalOperationId} not found.");
 
         var amount = originalOperation.Amount;
 
@@ -97,24 +127,23 @@ public class Account
             case OperationType.Credit:
                 AvailableBalance -= amount;
                 break;
-
             case OperationType.Debit:
                 AvailableBalance += amount;
                 break;
-
             case OperationType.Reserve:
                 ReservedBalance -= amount;
                 AvailableBalance += amount;
                 break;
-
             case OperationType.Capture:
                 AvailableBalance += amount;
                 break;
-
             default:
                 throw new InvalidOperationException($"Operations of type '{originalOperation.Type}' cannot be reversed.");
         }
 
-        _operations.Add(new AccountOperation(Id, OperationType.Reversal, amount));
+        var operation = new AccountOperation(Id, OperationType.Reversal, amount, referenceId);
+        _operations.Add(operation);
+
+        return operation;
     }
 }
