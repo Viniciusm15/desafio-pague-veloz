@@ -1,4 +1,4 @@
-﻿using PagueVeloz.Application.DTOs.Requests;
+﻿using PagueVeloz.Application.DTOs.Requests.Account;
 using PagueVeloz.Domain.Entities;
 
 namespace PagueVeloz.Application.Interfaces
@@ -15,6 +15,6 @@ namespace PagueVeloz.Application.Interfaces
         Task<Account> ReserveAsync(Guid accountId, ReserveAccountRequest request);
         Task<Account> CaptureAsync(Guid accountId, CaptureAccountRequest request);
         Task<Account> ReversalAsync(Guid accountId, ReversalAccountRequest request);
-        Task<(Account Source, Account Destination)> TransferAsync(TransferRequest request);
+        Task<(Account Source, Account Destination)> TransferAsync(TransferAccountRequest request);
     }
 }

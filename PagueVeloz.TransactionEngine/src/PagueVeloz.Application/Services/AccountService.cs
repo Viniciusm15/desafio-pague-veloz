@@ -1,4 +1,4 @@
-﻿using PagueVeloz.Application.DTOs.Requests;
+﻿using PagueVeloz.Application.DTOs.Requests.Account;
 using PagueVeloz.Application.Exceptions;
 using PagueVeloz.Application.Interfaces;
 using PagueVeloz.Domain.Entities;
@@ -118,7 +118,7 @@ public class AccountService : IAccountService
         return account;
     }
 
-    public async Task<(Account Source, Account Destination)> TransferAsync(TransferRequest request)
+    public async Task<(Account Source, Account Destination)> TransferAsync(TransferAccountRequest request)
     {
         if (request.SourceAccountId == request.DestinationAccountId)
             throw new ArgumentException("Source and destination accounts must be different.");

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PagueVeloz.Application.DTOs.Requests;
+using PagueVeloz.Application.DTOs.Requests.Account;
 using PagueVeloz.Application.Exceptions;
 using PagueVeloz.Application.Interfaces;
 
@@ -207,7 +207,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("transfer")]
-    public async Task<IActionResult> Transfer([FromBody] TransferRequest request)
+    public async Task<IActionResult> Transfer([FromBody] TransferAccountRequest request)
     {
         try
         {

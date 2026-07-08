@@ -1,4 +1,4 @@
-﻿using PagueVeloz.Application.DTOs.Requests;
+﻿using PagueVeloz.Application.DTOs.Requests.Customer;
 using PagueVeloz.Application.Interfaces;
 using PagueVeloz.Domain.Entities;
 using PagueVeloz.Domain.Interfaces;
