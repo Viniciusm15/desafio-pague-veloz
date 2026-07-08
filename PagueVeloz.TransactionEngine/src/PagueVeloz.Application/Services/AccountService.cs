@@ -111,10 +111,25 @@ public class AccountService : IAccountService
     public async Task<Account> ReversalAsync(Guid accountId, ReversalAccountRequest request)
     {
         var account = await GetAccountByIdAsync(accountId);
+        var originalOperation = account.Operations.FirstOrDefault(o => o.Id == request.OriginalOperationId)
+            ?? throw new InvalidOperationException($"Operation {request.OriginalOperationId} not found.");
+
+        var allOperations = await _accountRepository.GetOperationsByReferenceIdAsync(originalOperation.ReferenceId);
+        var otherOperation = allOperations.FirstOrDefault(o => o.AccountId != accountId);
+
+        if (otherOperation is not null)
+        {
+            var otherAccount = await GetAccountByIdAsync(otherOperation.AccountId);
+
+            account.Reversal(request.OriginalOperationId, request.ReferenceId);
+            otherAccount.Reversal(otherOperation.Id, request.ReferenceId);
+            await _unitOfWork.SaveChangesAsync();
+
+            return account;
+        }
 
         account.Reversal(request.OriginalOperationId, request.ReferenceId);
         await _unitOfWork.SaveChangesAsync();
-
         return account;
     }
 

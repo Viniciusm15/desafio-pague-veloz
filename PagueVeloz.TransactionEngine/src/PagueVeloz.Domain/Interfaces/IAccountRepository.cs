@@ -6,4 +6,5 @@ public interface IAccountRepository
 {
     Task<Account?> GetByIdAsync(Guid accountId);
     Task AddAsync(Account account);
+    Task<IEnumerable<AccountOperation>> GetOperationsByReferenceIdAsync(string referenceId);
 }
