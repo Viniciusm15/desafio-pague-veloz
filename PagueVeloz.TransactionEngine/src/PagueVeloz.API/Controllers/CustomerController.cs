@@ -18,25 +18,15 @@ public class CustomerController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCustomerRequest request)
     {
-        try
-        {
-            var customer = await _customerService.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var customer = await _customerService.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var customer = await _customerService.GetByIdAsync(id);
-
-        if (customer is null)
-            return NotFound();
-
+        if (customer is null) return NotFound();
         return Ok(customer);
     }
 }

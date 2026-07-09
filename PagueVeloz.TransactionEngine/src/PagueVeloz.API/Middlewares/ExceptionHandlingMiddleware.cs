@@ -1,4 +1,5 @@
-﻿using PagueVeloz.Application.Exceptions;
+﻿using FluentValidation;
+using PagueVeloz.Application.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -29,6 +30,12 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        if (exception is ValidationException validationException)
+        {
+            await HandleValidationExceptionAsync(context, validationException);
+            return;
+        }
+
         var (statusCode, title) = exception switch
         {
             NotFoundException => (HttpStatusCode.NotFound, "Resource not found"),
@@ -54,4 +61,28 @@ public class ExceptionHandlingMiddleware
 
         await context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
     }
+
+    private async Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
+    {
+        _logger.LogWarning("ValidationException: {Errors}",
+            string.Join("; ", exception.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}")));
+
+        var problemDetails = new
+        {
+            title = "Validation failed",
+            status = (int)HttpStatusCode.BadRequest,
+            errors = exception.Errors
+                .GroupBy(e => ToSnakeCase(e.PropertyName))
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()),
+            traceId = context.TraceIdentifier
+        };
+
+        context.Response.ContentType = "application/problem+json";
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+    }
+
+    private static string ToSnakeCase(string value) =>
+        string.Concat(value.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c : c.ToString())).ToLowerInvariant();
 }
