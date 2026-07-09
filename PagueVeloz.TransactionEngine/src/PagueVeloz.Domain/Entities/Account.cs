@@ -28,7 +28,6 @@ public class Account
     {
         if (creditLimit < 0)
             throw new ArgumentException("Credit limit cannot be negative.");
-
         return new Account(customerId, creditLimit);
     }
 
@@ -41,17 +40,23 @@ public class Account
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
 
-        if (Status != AccountStatus.Active)
-            return Fail(OperationType.Credit, amount, currency, referenceId, InactiveAccountReason(), metadata);
+        var failure = Validate(
+            OperationType.Credit,
+            amount,
+            currency,
+            referenceId,
+            metadata,
+            () => Status != AccountStatus.Active ? InactiveAccountReason() : null,
+            () => amount <= 0 ? "Amount must be greater than zero." : null
+        );
 
-        if (amount <= 0)
-            return Fail(OperationType.Credit, amount, currency, referenceId, "Amount must be greater than zero.", metadata);
+        if (failure is not null)
+            return failure;
 
         AvailableBalance += amount;
 
         var operation = AccountOperation.Succeeded(Id, OperationType.Credit, amount, currency, referenceId, metadata);
         _operations.Add(operation);
-
         return operation;
     }
 
@@ -60,21 +65,24 @@ public class Account
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
 
-        if (Status != AccountStatus.Active)
-            return Fail(OperationType.Debit, amount, currency, referenceId, InactiveAccountReason(), metadata);
+        var failure = Validate(
+            OperationType.Debit,
+            amount,
+            currency,
+            referenceId,
+            metadata,
+            () => Status != AccountStatus.Active ? InactiveAccountReason() : null,
+            () => amount <= 0 ? "Amount must be greater than zero." : null,
+            () => amount > AvailableBalance + CreditLimit ? "Insufficient funds to complete the debit." : null
+        );
 
-        if (amount <= 0)
-            return Fail(OperationType.Debit, amount, currency, referenceId, "Amount must be greater than zero.", metadata);
-
-        var availableWithCreditLimit = AvailableBalance + CreditLimit;
-        if (amount > availableWithCreditLimit)
-            return Fail(OperationType.Debit, amount, currency, referenceId, "Insufficient funds to complete the debit.", metadata);
+        if (failure is not null)
+            return failure;
 
         AvailableBalance -= amount;
 
         var operation = AccountOperation.Succeeded(Id, OperationType.Debit, amount, currency, referenceId, metadata);
         _operations.Add(operation);
-
         return operation;
     }
 
@@ -83,21 +91,25 @@ public class Account
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
 
-        if (Status != AccountStatus.Active)
-            return Fail(OperationType.Reserve, amount, currency, referenceId, InactiveAccountReason(), metadata);
+        var failure = Validate(
+            OperationType.Reserve,
+            amount,
+            currency,
+            referenceId,
+            metadata,
+            () => Status != AccountStatus.Active ? InactiveAccountReason() : null,
+            () => amount <= 0 ? "Amount must be greater than zero." : null,
+            () => amount > AvailableBalance ? "Insufficient available balance for reservation." : null
+        );
 
-        if (amount <= 0)
-            return Fail(OperationType.Reserve, amount, currency, referenceId, "Amount must be greater than zero.", metadata);
-
-        if (amount > AvailableBalance)
-            return Fail(OperationType.Reserve, amount, currency, referenceId, "Insufficient available balance for reservation.", metadata);
+        if (failure is not null)
+            return failure;
 
         AvailableBalance -= amount;
         ReservedBalance += amount;
 
         var operation = AccountOperation.Succeeded(Id, OperationType.Reserve, amount, currency, referenceId, metadata);
         _operations.Add(operation);
-
         return operation;
     }
 
@@ -106,23 +118,34 @@ public class Account
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
 
-        if (Status != AccountStatus.Active)
-            return Fail(OperationType.Capture, 0m, currency, referenceId, InactiveAccountReason(), metadata);
+        var failure = Validate(
+            OperationType.Capture,
+            0m,
+            currency,
+            referenceId,
+            metadata,
+            () => Status != AccountStatus.Active ? InactiveAccountReason() : null,
+            () =>
+            {
+                var reservation = _operations.FirstOrDefault(o => o.Id == reserveOperationId);
+                return reservation is null ? $"Reservation {reserveOperationId} not found." : null;
+            },
+            () =>
+            {
+                var reservation = _operations.FirstOrDefault(o => o.Id == reserveOperationId);
+                if (reservation is null) return null;
+                return reservation.Amount > ReservedBalance ? "Insufficient reserved balance for capture." : null;
+            }
+        );
 
-        var reservation = _operations.FirstOrDefault(o => o.Id == reserveOperationId);
-        if (reservation is null)
-            return Fail(OperationType.Capture, 0m, currency, referenceId, $"Reservation {reserveOperationId} not found.", metadata);
+        if (failure is not null)
+            return failure;
 
-        var amount = reservation.Amount;
-
-        if (amount > ReservedBalance)
-            return Fail(OperationType.Capture, amount, currency, referenceId, "Insufficient reserved balance for capture.", metadata);
-
+        var amount = _operations.First(o => o.Id == reserveOperationId).Amount;
         ReservedBalance -= amount;
 
         var operation = AccountOperation.Succeeded(Id, OperationType.Capture, amount, currency, referenceId, metadata);
         _operations.Add(operation);
-
         return operation;
     }
 
@@ -131,13 +154,24 @@ public class Account
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
 
-        if (Status != AccountStatus.Active)
-            return Fail(OperationType.Reversal, 0m, currency, referenceId, InactiveAccountReason(), metadata);
+        var failure = Validate(
+            OperationType.Reversal,
+            0m,
+            currency,
+            referenceId,
+            metadata,
+            () => Status != AccountStatus.Active ? InactiveAccountReason() : null,
+            () =>
+            {
+                var op = _operations.FirstOrDefault(o => o.Id == originalOperationId);
+                return op is null ? $"Operation {originalOperationId} not found." : null;
+            }
+        );
 
-        var originalOperation = _operations.FirstOrDefault(o => o.Id == originalOperationId);
-        if (originalOperation is null)
-            return Fail(OperationType.Reversal, 0m, currency, referenceId, $"Operation {originalOperationId} not found.", metadata);
+        if (failure is not null)
+            return failure;
 
+        var originalOperation = _operations.First(o => o.Id == originalOperationId);
         var amount = originalOperation.Amount;
 
         switch (originalOperation.Type)
@@ -162,11 +196,34 @@ public class Account
 
         var operation = AccountOperation.Succeeded(Id, OperationType.Reversal, amount, currency, referenceId, metadata);
         _operations.Add(operation);
-
         return operation;
     }
 
     #region Private Methods
+
+    private AccountOperation? Validate(
+        OperationType type,
+        decimal amount,
+        string currency,
+        string referenceId,
+        Dictionary<string, object>? metadata,
+        params Func<string?>[] validations)
+    {
+        if (string.IsNullOrWhiteSpace(referenceId))
+            return Fail(type, amount, currency, referenceId, "reference_id must not be empty.", metadata);
+
+        if (string.IsNullOrWhiteSpace(currency) || currency.Length != 3)
+            return Fail(type, amount, currency, referenceId, "currency must be a valid 3-letter ISO 4217 code.", metadata);
+
+        foreach (var validate in validations)
+        {
+            var error = validate();
+            if (error is not null)
+                return Fail(type, amount, currency, referenceId, error, metadata);
+        }
+
+        return null;
+    }
 
     private AccountOperation Fail(
         OperationType type, decimal amount, string currency, string referenceId,
