@@ -257,12 +257,6 @@ public class Account : Entity
         Dictionary<string, object>? metadata,
         params Func<string?>[] validations)
     {
-        if (string.IsNullOrWhiteSpace(referenceId))
-            return Fail(type, amount, currency, referenceId, "reference_id must not be empty.", metadata);
-
-        if (string.IsNullOrWhiteSpace(currency) || currency.Length != 3)
-            return Fail(type, amount, currency, referenceId, "currency must be a valid 3-letter ISO 4217 code.", metadata);
-
         foreach (var validate in validations)
         {
             var error = validate();
