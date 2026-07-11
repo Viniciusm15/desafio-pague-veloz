@@ -30,6 +30,10 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
         builder.Property(x => x.NextAttemptAt)
             .IsRequired(false);
 
+        builder.Property(x => x.CorrelationId)
+            .HasMaxLength(64)
+            .IsRequired(false);
+
         builder.HasIndex(x => new { x.ProcessedAt, x.NextAttemptAt })
             .HasDatabaseName("IX_OutboxMessages_ProcessedAt_NextAttemptAt");
     }

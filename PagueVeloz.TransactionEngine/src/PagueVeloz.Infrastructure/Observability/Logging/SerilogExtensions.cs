@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Formatting.Compact;
+using Serilog.Templates;
 
 namespace PagueVeloz.Infrastructure.Observability.Logging;
 
@@ -21,8 +22,8 @@ public static class SerilogExtensions
                 .Enrich.WithProperty("Service", serviceName);
 
             if (isDevelopment)
-                configuration.WriteTo.Console(outputTemplate:
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+                configuration.WriteTo.Console(new ExpressionTemplate(
+                    "[{@t:HH:mm:ss} {@l:u3}] {@m}{#if CorrelationId is not null} | CorrelationId: {CorrelationId}{#end}\n{@x}"));
             else
                 configuration.WriteTo.Console(new CompactJsonFormatter());
         });

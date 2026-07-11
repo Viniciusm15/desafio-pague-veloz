@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PagueVeloz.Infrastructure.Persistence.Context;
+using Serilog.Context;
 
 namespace PagueVeloz.Worker;
 
@@ -9,7 +10,9 @@ public class OutboxProcessorWorker : BackgroundService
     private readonly ILogger<OutboxProcessorWorker> _logger;
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(5);
 
-    public OutboxProcessorWorker(IServiceScopeFactory scopeFactory, ILogger<OutboxProcessorWorker> logger)
+    public OutboxProcessorWorker(
+        IServiceScopeFactory scopeFactory,
+        ILogger<OutboxProcessorWorker> logger)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
@@ -17,11 +20,23 @@ public class OutboxProcessorWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        _logger.LogInformation("Outbox processor worker started.");
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            await ProcessPendingMessagesAsync(stoppingToken);
+            try
+            {
+                await ProcessPendingMessagesAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while processing the outbox.");
+            }
+
             await Task.Delay(PollInterval, stoppingToken);
         }
+
+        _logger.LogInformation("Outbox processor worker stopped.");
     }
 
     private async Task ProcessPendingMessagesAsync(CancellationToken cancellationToken)
@@ -36,21 +51,55 @@ public class OutboxProcessorWorker : BackgroundService
             .Take(20)
             .ToListAsync(cancellationToken);
 
+        if (pending.Count == 0)
+            return;
+
+        _logger.LogInformation(
+            "Found {PendingMessages} pending outbox message(s) to process.",
+            pending.Count);
+
         foreach (var message in pending)
         {
+            var correlationId = message.CorrelationId;
+
             try
             {
-                _logger.LogInformation("Event published: {EventType}", message.EventType);
-                message.MarkProcessed();
+                using (LogContext.PushProperty("CorrelationId", correlationId))
+                {
+                    _logger.LogInformation(
+                        "Publishing event {EventType} ({MessageId}).",
+                        message.EventType,
+                        message.Id);
+
+                    message.MarkProcessed();
+
+                    _logger.LogInformation(
+                        "Successfully processed event {EventType} ({MessageId}).",
+                        message.EventType,
+                        message.Id);
+                }
             }
             catch (Exception ex)
             {
                 message.RegisterFailedAttempt();
-                _logger.LogWarning(ex, "Failed to publish event {EventType}", message.EventType);
+
+                using (LogContext.PushProperty("CorrelationId", correlationId))
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Failed to process event {EventType} ({MessageId}). Attempt {RetryCount}. Next retry at {NextAttemptAt}.",
+                        message.EventType,
+                        message.Id,
+                        message.Attempts,
+                        message.NextAttemptAt);
+                }
             }
         }
 
-        if (pending.Count > 0)
-            await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "{ProcessedMessages} outbox message(s) processed successfully.",
+            pending.Count);
     }
 }

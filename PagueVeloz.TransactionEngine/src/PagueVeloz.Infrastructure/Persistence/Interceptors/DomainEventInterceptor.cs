@@ -1,12 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore.Diagnostics;
 using PagueVeloz.Domain.Common;
 using PagueVeloz.Infrastructure.Messaging.Outbox;
+using PagueVeloz.Infrastructure.Observability;
 using System.Text.Json;
 
 namespace PagueVeloz.Infrastructure.Persistence.Interceptors;
 
 public class DomainEventInterceptor : SaveChangesInterceptor
 {
+    private readonly ICorrelationIdProvider _correlationIdProvider;
+
+    public DomainEventInterceptor(ICorrelationIdProvider correlationIdProvider)
+    {
+        _correlationIdProvider = correlationIdProvider;
+    }
+
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -17,6 +25,7 @@ public class DomainEventInterceptor : SaveChangesInterceptor
             return base.SavingChangesAsync(eventData, result, cancellationToken);
 
         var outboxEntries = new List<OutboxMessage>();
+        var correlationId = _correlationIdProvider.CorrelationId;
 
         foreach (var entry in context.ChangeTracker.Entries<Entity>())
         {
@@ -37,7 +46,8 @@ public class DomainEventInterceptor : SaveChangesInterceptor
                         {
                             WriteIndented = false
                         }),
-                        occurredOn: @event.OccurredOn
+                        occurredOn: @event.OccurredOn,
+                        correlationId: correlationId
                     ));
                 }
             }

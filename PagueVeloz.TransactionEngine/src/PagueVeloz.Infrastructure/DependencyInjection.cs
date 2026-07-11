@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PagueVeloz.Domain.Interfaces;
+using PagueVeloz.Infrastructure.Observability;
 using PagueVeloz.Infrastructure.Observability.HealthChecks;
 using PagueVeloz.Infrastructure.Persistence;
 using PagueVeloz.Infrastructure.Persistence.Context;
@@ -16,6 +17,8 @@ public static class DependencyInjection
         this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        services.AddSingleton<ICorrelationIdProvider, CorrelationIdAccessor>();
 
         services.AddScoped<DomainEventInterceptor>();
         services.AddDbContext<AppDbContext>((sp, options) =>

@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using PagueVeloz.Application.Exceptions;
+using PagueVeloz.Infrastructure.Observability;
 using System.Net;
 using System.Text.Json;
 
@@ -10,31 +11,35 @@ public class ExceptionHandlingMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, ICorrelationIdProvider correlationIdProvider)
     {
         try
         {
             await _next(context);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            await HandleExceptionAsync(context, ex);
+            await HandleExceptionAsync(context, exception, correlationIdProvider);
         }
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception, ICorrelationIdProvider correlationIdProvider)
     {
         if (exception is ValidationException validationException)
         {
-            await HandleValidationExceptionAsync(context, validationException);
+            await HandleValidationExceptionAsync(context, validationException, correlationIdProvider);
             return;
         }
+
+        var correlationId = GetCorrelationId(context, correlationIdProvider);
 
         var (statusCode, title) = exception switch
         {
@@ -45,16 +50,32 @@ public class ExceptionHandlingMiddleware
         };
 
         if (statusCode == HttpStatusCode.InternalServerError)
-            _logger.LogError(exception, "Unhandled exception processing {Method} {Path}", context.Request.Method, context.Request.Path);
+        {
+            _logger.LogError(
+                exception,
+                "Unhandled exception while processing {Method} {Path}. CorrelationId: {CorrelationId}",
+                context.Request.Method,
+                context.Request.Path,
+                correlationId);
+        }
         else
-            _logger.LogWarning("{ExceptionType}: {Message}", exception.GetType().Name, exception.Message);
+        {
+            _logger.LogWarning(
+                exception,
+                "{ExceptionType} while processing {Method} {Path}. CorrelationId: {CorrelationId}. Message: {Message}",
+                exception.GetType().Name,
+                context.Request.Method,
+                context.Request.Path,
+                correlationId,
+                exception.Message);
+        }
 
         var problemDetails = new
         {
             title,
             status = (int)statusCode,
             detail = exception.Message,
-            trace_id = GetCorrelationId(context)
+            trace_id = correlationId
         };
 
         context.Response.ContentType = "application/problem+json";
@@ -63,10 +84,23 @@ public class ExceptionHandlingMiddleware
         await context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
     }
 
-    private async Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
+    private async Task HandleValidationExceptionAsync(
+        HttpContext context,
+        ValidationException exception,
+        ICorrelationIdProvider correlationIdProvider)
     {
-        _logger.LogWarning("ValidationException: {Errors}",
-            string.Join("; ", exception.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}")));
+        var correlationId = GetCorrelationId(context, correlationIdProvider);
+
+        var errors = string.Join("; ",
+            exception.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}"));
+
+        _logger.LogWarning(
+            exception,
+            "Validation failed while processing {Method} {Path}. CorrelationId: {CorrelationId}. Errors: {Errors}",
+            context.Request.Method,
+            context.Request.Path,
+            correlationId,
+            errors);
 
         var problemDetails = new
         {
@@ -74,8 +108,10 @@ public class ExceptionHandlingMiddleware
             status = (int)HttpStatusCode.BadRequest,
             errors = exception.Errors
                 .GroupBy(e => ToSnakeCase(e.PropertyName))
-                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()),
-            trace_id = GetCorrelationId(context)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray()),
+            trace_id = correlationId
         };
 
         context.Response.ContentType = "application/problem+json";
@@ -85,10 +121,14 @@ public class ExceptionHandlingMiddleware
     }
 
     private static string ToSnakeCase(string value) =>
-        string.Concat(value.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c : c.ToString())).ToLowerInvariant();
+        string.Concat(value.Select((c, i) =>
+            i > 0 && char.IsUpper(c)
+                ? "_" + c
+                : c.ToString()))
+        .ToLowerInvariant();
 
-    private static string GetCorrelationId(HttpContext context) =>
-        context.Items.TryGetValue("CorrelationId", out var correlationId) && correlationId is string value
-            ? value
+    private static string GetCorrelationId(HttpContext context, ICorrelationIdProvider correlationIdProvider) =>
+        !string.IsNullOrWhiteSpace(correlationIdProvider.CorrelationId)
+            ? correlationIdProvider.CorrelationId
             : context.TraceIdentifier;
 }

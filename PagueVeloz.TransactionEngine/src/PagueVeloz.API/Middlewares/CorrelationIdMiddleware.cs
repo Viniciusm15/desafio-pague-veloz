@@ -1,11 +1,11 @@
-﻿using Serilog.Context;
+﻿using PagueVeloz.Infrastructure.Observability;
+using Serilog.Context;
 
 namespace PagueVeloz.API.Middlewares;
 
 public class CorrelationIdMiddleware
 {
     private const string HeaderName = "X-Correlation-Id";
-
     private readonly RequestDelegate _next;
 
     public CorrelationIdMiddleware(RequestDelegate next)
@@ -13,7 +13,7 @@ public class CorrelationIdMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, ICorrelationIdProvider correlationIdProvider)
     {
         var correlationId = context.Request.Headers.TryGetValue(HeaderName, out var existing) && !string.IsNullOrWhiteSpace(existing)
             ? existing.ToString()
@@ -21,6 +21,7 @@ public class CorrelationIdMiddleware
 
         context.Items["CorrelationId"] = correlationId;
         context.Response.Headers[HeaderName] = correlationId;
+        correlationIdProvider.SetCorrelationId(correlationId);
 
         using (LogContext.PushProperty("CorrelationId", correlationId))
         {

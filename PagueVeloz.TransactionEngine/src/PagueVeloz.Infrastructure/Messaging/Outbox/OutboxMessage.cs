@@ -9,10 +9,11 @@ public class OutboxMessage
     public DateTime? ProcessedAt { get; private set; }
     public int Attempts { get; private set; }
     public DateTime? NextAttemptAt { get; private set; }
+    public string? CorrelationId { get; private set; }
 
     private OutboxMessage() { }
 
-    public OutboxMessage(string eventType, string payload, DateTime occurredOn)
+    public OutboxMessage(string eventType, string payload, DateTime occurredOn, string? correlationId = null)
     {
         Id = Guid.NewGuid();
         EventType = eventType;
@@ -20,6 +21,7 @@ public class OutboxMessage
         OccurredOn = occurredOn;
         Attempts = 0;
         NextAttemptAt = occurredOn;
+        CorrelationId = correlationId;
     }
 
     public void MarkProcessed()
