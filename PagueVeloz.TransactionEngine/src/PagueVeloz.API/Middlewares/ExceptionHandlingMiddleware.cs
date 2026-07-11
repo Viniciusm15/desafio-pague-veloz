@@ -39,6 +39,7 @@ public class ExceptionHandlingMiddleware
         var (statusCode, title) = exception switch
         {
             NotFoundException => (HttpStatusCode.NotFound, "Resource not found"),
+            ConcurrencyConflictException => (HttpStatusCode.Conflict, "Concurrency conflict"),
             ArgumentException => (HttpStatusCode.BadRequest, "Invalid request"),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred")
         };

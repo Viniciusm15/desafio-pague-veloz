@@ -1,4 +1,8 @@
-﻿using PagueVeloz.Domain.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using PagueVeloz.Application.Exceptions;
+using PagueVeloz.Domain.Common;
+using PagueVeloz.Domain.Interfaces;
 using PagueVeloz.Infrastructure.Persistence.Context;
 
 namespace PagueVeloz.Infrastructure.Persistence;
@@ -14,6 +18,17 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            EntityEntry? entry = ex.Entries.FirstOrDefault();
+            var entityName = entry?.Entity.GetType().Name ?? "Entity";
+            var entityId = entry?.Entity is Entity trackedEntity ? (object)trackedEntity.Id : "unknown";
+
+            throw new ConcurrencyConflictException(entityName, entityId);
+        }
     }
 }

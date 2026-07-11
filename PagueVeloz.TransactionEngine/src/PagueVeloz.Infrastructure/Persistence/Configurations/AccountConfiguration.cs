@@ -36,6 +36,12 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
            .HasDefaultValue(AccountStatus.Active)
            .HasSentinel(AccountStatus.Active);
 
+        builder.Property<uint>("Version")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+
         builder.HasOne<Customer>()
             .WithMany()
             .HasForeignKey(a => a.CustomerId);
