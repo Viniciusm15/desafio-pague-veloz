@@ -5,7 +5,7 @@ namespace PagueVeloz.Domain.Events;
 public record FundsReservedEvent(
     Guid AccountId,
     Guid OperationId,
-    decimal Amount,
+    long Amount,
     string Currency,
     string ReferenceId
 ) : DomainEventBase;

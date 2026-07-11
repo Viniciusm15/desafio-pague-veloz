@@ -5,7 +5,7 @@ namespace PagueVeloz.Application.DTOs.Transactions.Requests;
 public record TransactionRequest(
     OperationType Operation,
     Guid AccountId,
-    decimal Amount,
+    long Amount,
     string ReferenceId,
     string Currency = "BRL",
     Dictionary<string, object>? Metadata = null,

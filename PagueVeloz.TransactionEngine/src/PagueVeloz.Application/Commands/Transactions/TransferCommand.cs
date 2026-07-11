@@ -6,7 +6,7 @@ namespace PagueVeloz.Application.Commands.Transactions;
 public record TransferCommand(
     Guid SourceAccountId,
     Guid DestinationAccountId,
-    decimal Amount,
+    long Amount,
     string ReferenceId,
     string Currency,
     Dictionary<string, object>? Metadata

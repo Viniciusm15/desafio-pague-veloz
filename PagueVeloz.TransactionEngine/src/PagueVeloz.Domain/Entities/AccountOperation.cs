@@ -8,7 +8,7 @@ public class AccountOperation
     public Guid Id { get; private set; }
     public Guid AccountId { get; private set; }
     public OperationType Type { get; private set; }
-    public decimal Amount { get; private set; }
+    public long Amount { get; private set; }
     public string Currency { get; private set; } = string.Empty;
     public string? Metadata { get; private set; }
     public OperationStatus Status { get; private set; }
@@ -19,14 +19,14 @@ public class AccountOperation
     private AccountOperation() { }
 
     public AccountOperation(
-    Guid accountId,
-    OperationType type,
-    decimal amount,
-    string currency,
-    OperationStatus status,
-    string referenceId,
-    string? failureReason,
-    Dictionary<string, object>? metadata = null)
+        Guid accountId,
+        OperationType type,
+        long amount,
+        string currency,
+        OperationStatus status,
+        string referenceId,
+        string? failureReason,
+        Dictionary<string, object>? metadata = null)
     {
         Id = Guid.NewGuid();
         AccountId = accountId;
@@ -43,7 +43,7 @@ public class AccountOperation
     public static AccountOperation Succeeded(
         Guid accountId,
         OperationType type,
-        decimal amount,
+        long amount,
         string currency,
         string referenceId,
         Dictionary<string, object>? metadata = null)
@@ -52,7 +52,7 @@ public class AccountOperation
     public static AccountOperation Failed(
         Guid accountId,
         OperationType type,
-        decimal amount,
+        long amount,
         string currency,
         string referenceId,
         string failureReason,

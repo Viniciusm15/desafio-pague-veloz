@@ -6,7 +6,7 @@ public record OperationResponse(
     Guid Id,
     Guid AccountId,
     string Type,
-    decimal Amount,
+    long Amount,
     string Currency,
     string? Metadata,
     string Status,

@@ -17,17 +17,17 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
             .IsRequired();
 
         builder.Property(a => a.AvailableBalance)
-            .HasColumnType("decimal(18,2)")
-            .HasDefaultValue(0m)
+            .HasColumnType("bigint")
+            .HasDefaultValue(0L)
             .IsRequired();
 
         builder.Property(a => a.ReservedBalance)
-            .HasColumnType("decimal(18,2)")
-            .HasDefaultValue(0m);
+            .HasColumnType("bigint")
+            .HasDefaultValue(0L);
 
         builder.Property(a => a.CreditLimit)
-            .HasColumnType("decimal(18,2)")
-            .HasDefaultValue(0m)
+            .HasColumnType("bigint")
+            .HasDefaultValue(0L)
             .IsRequired();
 
         builder.Property(a => a.Status)

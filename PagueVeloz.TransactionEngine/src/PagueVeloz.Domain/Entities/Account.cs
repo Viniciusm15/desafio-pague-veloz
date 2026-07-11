@@ -7,25 +7,25 @@ namespace PagueVeloz.Domain.Entities;
 public class Account : Entity
 {
     public Guid CustomerId { get; private set; }
-    public decimal AvailableBalance { get; private set; }
-    public decimal ReservedBalance { get; private set; }
-    public decimal CreditLimit { get; private set; }
+    public long AvailableBalance { get; private set; }
+    public long ReservedBalance { get; private set; }
+    public long CreditLimit { get; private set; }
     public AccountStatus Status { get; private set; }
 
     private readonly List<AccountOperation> _operations = [];
     public IReadOnlyCollection<AccountOperation> Operations => _operations.AsReadOnly();
 
-    private Account(Guid customerId, decimal creditLimit)
+    private Account(Guid customerId, long creditLimit)
     {
         Id = Guid.NewGuid();
         CustomerId = customerId;
-        AvailableBalance = 0m;
-        ReservedBalance = 0m;
+        AvailableBalance = 0;
+        ReservedBalance = 0;
         CreditLimit = creditLimit;
         Status = AccountStatus.Active;
     }
 
-    public static Account Open(Guid customerId, decimal creditLimit = 0m)
+    public static Account Open(Guid customerId, long creditLimit = 0)
     {
         if (creditLimit < 0)
             throw new ArgumentException("Credit limit cannot be negative.");
@@ -36,7 +36,7 @@ public class Account : Entity
     public void Deactivate() => Status = AccountStatus.Inactive;
     public void Block() => Status = AccountStatus.Blocked;
 
-    public AccountOperation Credit(decimal amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
+    public AccountOperation Credit(long amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
@@ -70,7 +70,7 @@ public class Account : Entity
         return operation;
     }
 
-    public AccountOperation Debit(decimal amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
+    public AccountOperation Debit(long amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
@@ -105,7 +105,7 @@ public class Account : Entity
         return operation;
     }
 
-    public AccountOperation Reserve(decimal amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
+    public AccountOperation Reserve(long amount, string referenceId, string currency, Dictionary<string, object>? metadata = null)
     {
         if (TryGetExistingOperation(referenceId, out var existing))
             return existing!;
@@ -148,7 +148,7 @@ public class Account : Entity
 
         var failure = Validate(
             OperationType.Capture,
-            0m,
+            0L,
             currency,
             referenceId,
             metadata,
@@ -194,7 +194,7 @@ public class Account : Entity
 
         var failure = Validate(
             OperationType.Reversal,
-            0m,
+            0L,
             currency,
             referenceId,
             metadata,
@@ -251,7 +251,7 @@ public class Account : Entity
 
     private AccountOperation? Validate(
         OperationType type,
-        decimal amount,
+        long amount,
         string currency,
         string referenceId,
         Dictionary<string, object>? metadata,
@@ -274,7 +274,7 @@ public class Account : Entity
     }
 
     private AccountOperation Fail(
-        OperationType type, decimal amount, string currency, string referenceId,
+        OperationType type, long amount, string currency, string referenceId,
         string reason, Dictionary<string, object>? metadata)
     {
         var operation = AccountOperation.Failed(Id, type, amount, currency, referenceId, reason, metadata);

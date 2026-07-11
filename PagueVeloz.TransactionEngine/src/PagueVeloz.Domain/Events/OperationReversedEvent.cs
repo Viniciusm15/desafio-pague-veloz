@@ -6,7 +6,7 @@ public record OperationReversedEvent(
     Guid AccountId,
     Guid OperationId,
     Guid OriginalOperationId,
-    decimal Amount,
+    long Amount,
     string Currency,
     string ReferenceId
 ) : DomainEventBase;

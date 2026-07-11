@@ -6,7 +6,7 @@ public record FundsCapturedEvent(
     Guid AccountId,
     Guid OperationId,
     Guid ReservationOperationId,
-    decimal Amount,
+    long Amount,
     string Currency,
     string ReferenceId
 ) : DomainEventBase;

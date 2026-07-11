@@ -6,9 +6,9 @@ namespace PagueVeloz.Application.DTOs.Transactions.Responses;
 public record TransactionResponse(
     Guid TransactionId,
     string Status,
-    decimal Balance,
-    decimal ReservedBalance,
-    decimal AvailableBalance,
+    long Balance,
+    long ReservedBalance,
+    long AvailableBalance,
     DateTime Timestamp,
     string? ErrorMessage)
 {

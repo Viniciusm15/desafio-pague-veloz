@@ -6,9 +6,9 @@ namespace PagueVeloz.Application.DTOs.Accounts.Responses;
 public record AccountResponse(
     Guid Id,
     Guid CustomerId,
-    decimal AvailableBalance,
-    decimal ReservedBalance,
-    decimal CreditLimit,
+    long AvailableBalance,
+    long ReservedBalance,
+    long CreditLimit,
     string Status,
     IEnumerable<OperationResponse> Operations
 )

@@ -5,7 +5,7 @@ namespace PagueVeloz.Application.Commands.Transactions;
 
 public record ReserveCommand(
     Guid AccountId,
-    decimal Amount,
+    long Amount,
     string ReferenceId,
     string Currency,
     Dictionary<string, object>? Metadata

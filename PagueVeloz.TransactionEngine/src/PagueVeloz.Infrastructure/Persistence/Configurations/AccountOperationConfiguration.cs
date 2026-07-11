@@ -17,7 +17,7 @@ public class AccountOperationConfiguration : IEntityTypeConfiguration<AccountOpe
             .HasMaxLength(20);
 
         builder.Property(o => o.Amount)
-            .HasColumnType("decimal(18,2)");
+            .HasColumnType("bigint");
 
         builder.Property(o => o.Currency)
             .HasMaxLength(3)
