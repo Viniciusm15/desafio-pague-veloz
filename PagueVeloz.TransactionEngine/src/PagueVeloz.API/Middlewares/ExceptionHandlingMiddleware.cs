@@ -54,7 +54,7 @@ public class ExceptionHandlingMiddleware
             title,
             status = (int)statusCode,
             detail = exception.Message,
-            trace_id = context.TraceIdentifier
+            trace_id = GetCorrelationId(context)
         };
 
         context.Response.ContentType = "application/problem+json";
@@ -75,7 +75,7 @@ public class ExceptionHandlingMiddleware
             errors = exception.Errors
                 .GroupBy(e => ToSnakeCase(e.PropertyName))
                 .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()),
-            trace_id = context.TraceIdentifier
+            trace_id = GetCorrelationId(context)
         };
 
         context.Response.ContentType = "application/problem+json";
@@ -86,4 +86,9 @@ public class ExceptionHandlingMiddleware
 
     private static string ToSnakeCase(string value) =>
         string.Concat(value.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c : c.ToString())).ToLowerInvariant();
+
+    private static string GetCorrelationId(HttpContext context) =>
+        context.Items.TryGetValue("CorrelationId", out var correlationId) && correlationId is string value
+            ? value
+            : context.TraceIdentifier;
 }

@@ -1,12 +1,16 @@
 using PagueVeloz.Application;
 using PagueVeloz.Infrastructure;
+using PagueVeloz.Infrastructure.Observability.Logging;
 using PagueVeloz.Worker;
 
-var builder = Host.CreateApplicationBuilder(args);
+var host = Host.CreateDefaultBuilder(args)
+    .UseCustomSerilog("PagueVeloz.Worker")
+    .ConfigureServices((context, services) =>
+    {
+        services.AddInfrastructure(context.Configuration);
+        services.AddApplication();
+        services.AddHostedService<OutboxProcessorWorker>();
+    })
+    .Build();
 
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddApplication();
-builder.Services.AddHostedService<OutboxProcessorWorker>();
-
-var host = builder.Build();
-host.Run();
+await host.RunAsync();

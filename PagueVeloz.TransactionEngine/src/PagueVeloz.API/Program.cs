@@ -1,10 +1,14 @@
 using PagueVeloz.API.Middlewares;
 using PagueVeloz.Application;
 using PagueVeloz.Infrastructure;
+using PagueVeloz.Infrastructure.Observability.Logging;
+using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseCustomSerilog("PagueVeloz.API");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -20,7 +24,14 @@ builder.Services.AddApplication();
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+});
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
