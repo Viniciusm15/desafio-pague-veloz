@@ -5,6 +5,9 @@ using PagueVeloz.Application.Queries.Customers;
 
 namespace PagueVeloz.API.Controllers;
 
+/// <summary>
+/// Controller for managing customers.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class CustomerController : ControllerBase
@@ -16,6 +19,12 @@ public class CustomerController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Creates a new customer.
+    /// </summary>
+    /// <param name="command">Customer creation data.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created customer.</returns>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCustomerCommand command, CancellationToken cancellationToken)
     {
@@ -23,6 +32,12 @@ public class CustomerController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
     }
 
+    /// <summary>
+    /// Retrieves a customer by their ID.
+    /// </summary>
+    /// <param name="id">Customer ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The customer details.</returns>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {

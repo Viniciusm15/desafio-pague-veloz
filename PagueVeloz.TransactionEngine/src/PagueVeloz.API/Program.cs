@@ -3,6 +3,7 @@ using PagueVeloz.Application;
 using PagueVeloz.Infrastructure;
 using PagueVeloz.Infrastructure.Observability.Logging;
 using Serilog;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -18,7 +19,23 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "PagueVeloz API",
+        Version = "v1",
+        Description = "API for account management and financial transactions",
+    });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+});
+
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
@@ -36,6 +53,7 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "PagueVeloz API V1");
     c.RoutePrefix = "swagger";
+    c.DocumentTitle = "PagueVeloz API Documentation";
 });
 
 app.UseHttpsRedirection();

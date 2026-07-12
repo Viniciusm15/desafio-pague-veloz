@@ -4,6 +4,9 @@ using PagueVeloz.Infrastructure.Observability.HealthChecks;
 
 namespace PagueVeloz.API.Controllers;
 
+/// <summary>
+/// Controller for health checks.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class HealthController : ControllerBase
@@ -17,6 +20,11 @@ public class HealthController : ControllerBase
         _environment = environment;
     }
 
+    /// <summary>
+    /// Gets the health status of the application and its dependencies.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Health check response with status and details.</returns>
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
