@@ -1,7 +1,9 @@
-﻿using PagueVeloz.API.Middlewares;
+﻿using Microsoft.EntityFrameworkCore;
+using PagueVeloz.API.Middlewares;
 using PagueVeloz.Application;
 using PagueVeloz.Infrastructure;
 using PagueVeloz.Infrastructure.Observability.Logging;
+using PagueVeloz.Infrastructure.Persistence.Context;
 using Serilog;
 using System.Reflection;
 using System.Text.Json;
@@ -40,6 +42,12 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging(options =>
